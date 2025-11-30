@@ -92,21 +92,16 @@ function App() {
   const uniquePhoneCards = useMemo(() => {
     const map = new Map<string, SMS>();
     
-    // Iterate through all messages
     messages.forEach(msg => {
-      // Prioritize 'phone_no', fallback to 'PhoneNo'
       const actualNumber = msg.phone_no || msg.PhoneNo;
       
       if (actualNumber && actualNumber.length > 5) {
-        // If we haven't seen this number yet, store it. 
-        // Since messages usually come sorted by newest, this keeps the latest details for that number.
         if (!map.has(actualNumber)) {
           map.set(actualNumber, msg);
         }
       }
     });
     
-    // Return ALL unique numbers found
     return Array.from(map.values());
   }, [messages]);
 
@@ -152,7 +147,7 @@ function App() {
         </div>
       </header>
 
-      {/* Main Content: Unique Numbers with Full Info */}
+      {/* Main Content */}
       <section className="hero-section">
         <h2 className="section-title">Active Numbers ({uniquePhoneCards.length})</h2>
         <p className="section-subtitle">Real-time unique numbers with full details.</p>
@@ -161,7 +156,7 @@ function App() {
           {uniquePhoneCards.length > 0 ? (
             uniquePhoneCards.map((item) => (
               <div key={item.ID} className="number-card full-info-card">
-                {/* Header of Card */}
+                {/* Card Header */}
                 <div className="card-header">
                    <div className="icon-box"><Icons.Phone /></div>
                    <div className="card-header-text">
@@ -180,7 +175,7 @@ function App() {
                 {/* Divider */}
                 <div className="card-divider"></div>
 
-                {/* Full Details Body */}
+                {/* Card Body */}
                 <div className="card-body">
                   <div className="info-row">
                     <span className="label">Latest From:</span>
@@ -195,11 +190,10 @@ function App() {
                     <span className="value">{item.RecTime}</span>
                   </div>
                   
-                  {/* Extra Technical Info */}
+                  {/* Technical Info (Filtered: Removed Project) */}
                   <div className="tech-info">
                     {item.IMSI && <span className="tech-badge">IMSI: {item.IMSI}</span>}
                     {item.Route && <span className="tech-badge">Route: {item.Route}</span>}
-                    {item.project && <span className="tech-badge">Prj: {item.project}</span>}
                   </div>
                 </div>
               </div>
@@ -211,6 +205,20 @@ function App() {
           )}
         </div>
       </section>
+
+      {/* Footer */}
+      <footer className="app-footer">
+        <div className="footer-content">
+          <p className="copyright">&copy; {new Date().getFullYear()} GhostSMS. All rights reserved.</p>
+          <div className="footer-links">
+            <a href="#">Privacy Policy</a>
+            <span className="separator">•</span>
+            <a href="#">Terms of Service</a>
+            <span className="separator">•</span>
+            <a href="https://t.me/drkingbd" target="_blank" rel="noreferrer">Contact Support</a>
+          </div>
+        </div>
+      </footer>
 
       {/* Toast */}
       {toast.visible && (
