@@ -9,9 +9,6 @@ const Icons = {
   Logo: () => (
     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
   ),
-  Info: () => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-  ),
   Copy: () => (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
   ),
@@ -91,17 +88,25 @@ function App() {
     };
   }, []);
 
-  // --- Logic: Get Unique Numbers with Full Info ---
+  // --- Logic: Get EVERY Unique Number with Full Info ---
   const uniquePhoneCards = useMemo(() => {
     const map = new Map<string, SMS>();
+    
+    // Iterate through all messages
     messages.forEach(msg => {
+      // Prioritize 'phone_no', fallback to 'PhoneNo'
       const actualNumber = msg.phone_no || msg.PhoneNo;
+      
       if (actualNumber && actualNumber.length > 5) {
+        // If we haven't seen this number yet, store it. 
+        // Since messages usually come sorted by newest, this keeps the latest details for that number.
         if (!map.has(actualNumber)) {
           map.set(actualNumber, msg);
         }
       }
     });
+    
+    // Return ALL unique numbers found
     return Array.from(map.values());
   }, [messages]);
 
@@ -129,7 +134,6 @@ function App() {
         </div>
         
         <div className="header-actions">
-          {/* Telegram Promotion Button */}
           <a 
             href="https://t.me/drkingbd" 
             target="_blank" 
@@ -151,7 +155,7 @@ function App() {
       {/* Main Content: Unique Numbers with Full Info */}
       <section className="hero-section">
         <h2 className="section-title">Active Numbers ({uniquePhoneCards.length})</h2>
-        <p className="section-subtitle">Showing full info for every unique phone number found.</p>
+        <p className="section-subtitle">Real-time unique numbers with full details.</p>
 
         <div className="number-grid">
           {uniquePhoneCards.length > 0 ? (
