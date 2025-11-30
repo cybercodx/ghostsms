@@ -1,14 +1,16 @@
 {
-  "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "ghostsms",
+  "compatibility_date": "2025-11-29",
+
   "main": "./src/worker/index.ts",
-  "compatibility_date": "2025-04-03",
-  "compatibility_flags": ["nodejs_compat"],
 
   "assets": {
+    "directory": "./dist/",
     "not_found_handling": "single-page-application",
+    "binding": "ASSETS",
     "run_worker_first": [
-      "/api/*"
+      "/api/*",
+      "!/api/ws/*"
     ]
   },
 
@@ -24,7 +26,7 @@
   "migrations": [
     {
       "tag": "v1",
-      "new_sqlite_classes": ["SMSWebSocket"]
+      "new_sql_classes": ["SMSWebSocket"]
     }
   ]
 }
