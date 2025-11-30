@@ -1,22 +1,25 @@
 import { useEffect, useState, useMemo } from "react";
 import "./App.css";
 
-// --- Icons (Inline SVGs for performance) ---
+// --- Icons ---
 const Icons = {
   Phone: () => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
   ),
   Logo: () => (
     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
   ),
-  Search: () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+  Info: () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+  ),
+  Copy: () => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
   ),
   Check: () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
   ),
-  Empty: () => (
-    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"></path><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>
+  Telegram: () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.198 2.433a2.242 2.242 0 0 0-1.022.215l-18.6 7.4a2.25 2.25 0 0 0 .644 4.19l4.8 1.5 1.5 4.8a2.25 2.25 0 0 0 4.19.644l7.4-18.6a2.242 2.242 0 0 0-.215-1.022A2.25 2.25 0 0 0 21.198 2.433Z"/><path d="m10 14 11-11"/></svg>
   )
 };
 
@@ -26,7 +29,11 @@ interface SMS {
   FromNo: string;
   Message: string;
   RecTime: string;
-  PhoneNo: string;
+  phone_no: string; 
+  PhoneNo?: string;
+  Route?: string;
+  IMSI?: string;
+  project?: string;
 }
 
 interface APIResponse {
@@ -37,18 +44,13 @@ interface APIResponse {
 type ConnectionStatus = "Connecting..." | "Live" | "Disconnected" | "Reconnecting";
 
 function App() {
-  // State
   const [messages, setMessages] = useState<SMS[]>([]);
   const [status, setStatus] = useState<ConnectionStatus>("Connecting...");
-  const [searchTerm, setSearchTerm] = useState("");
   const [toast, setToast] = useState<{msg: string, visible: boolean}>({ msg: "", visible: false });
 
-  // WebSocket Logic
   useEffect(() => {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const host = window.location.host;
-    
-    // Construct WebSocket URL dynamically
     const wsUrl = `${protocol}//${host}/api/ws`;
     
     let ws: WebSocket;
@@ -80,45 +82,32 @@ function App() {
           connect();
         }, 3000); 
       };
-
-      ws.onerror = (err) => {
-        console.error("WebSocket error", err);
-        ws.close();
-      };
     };
 
     connect();
-
     return () => {
       if(ws) ws.close();
       clearTimeout(reconnectTimer);
     };
   }, []);
 
-  // Derived State: Unique Recipient Numbers
-  const uniqueNumbers = useMemo(() => {
-    const numbers = new Set<string>();
+  // --- Logic: Get Unique Numbers with Full Info ---
+  const uniquePhoneCards = useMemo(() => {
+    const map = new Map<string, SMS>();
     messages.forEach(msg => {
-      if(msg.PhoneNo && msg.PhoneNo.length > 5) numbers.add(msg.PhoneNo);
+      const actualNumber = msg.phone_no || msg.PhoneNo;
+      if (actualNumber && actualNumber.length > 5) {
+        if (!map.has(actualNumber)) {
+          map.set(actualNumber, msg);
+        }
+      }
     });
-    return Array.from(numbers).slice(0, 4); // Take top 4
+    return Array.from(map.values());
   }, [messages]);
 
-  // Derived State: Filtered Messages
-  const filteredMessages = useMemo(() => {
-    if (!searchTerm) return messages;
-    const lowerTerm = searchTerm.toLowerCase();
-    return messages.filter(msg => 
-      msg.Message.toLowerCase().includes(lowerTerm) || 
-      msg.FromNo.toLowerCase().includes(lowerTerm) ||
-      (msg.PhoneNo && msg.PhoneNo.toLowerCase().includes(lowerTerm))
-    );
-  }, [messages, searchTerm]);
-
-  // Actions
-  const handleCopy = (text: string, label: string) => {
+  const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
-    setToast({ msg: `${label} Copied!`, visible: true });
+    setToast({ msg: "Copied!", visible: true });
     setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 2000);
   };
 
@@ -132,7 +121,7 @@ function App() {
 
   return (
     <div className="app-container">
-      {/* --- Header --- */}
+      {/* Header */}
       <header className="main-header">
         <div className="logo-area">
           <div className="logo-bubble"><Icons.Logo /></div>
@@ -140,6 +129,18 @@ function App() {
         </div>
         
         <div className="header-actions">
+          {/* Telegram Promotion Button */}
+          <a 
+            href="https://t.me/drkingbd" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="telegram-btn"
+            title="Join DrKingBD Telegram Channel"
+          >
+            <Icons.Telegram />
+            <span className="desktop-text">Join Channel</span>
+          </a>
+
           <div className="status-badge">
             <span className={`status-dot ${getStatusColor(status)}`}></span>
             {status}
@@ -147,90 +148,67 @@ function App() {
         </div>
       </header>
 
-      {/* --- Active Numbers Section --- */}
+      {/* Main Content: Unique Numbers with Full Info */}
       <section className="hero-section">
-        <div className="section-label">Active Numbers</div>
+        <h2 className="section-title">Active Numbers ({uniquePhoneCards.length})</h2>
+        <p className="section-subtitle">Showing full info for every unique phone number found.</p>
+
         <div className="number-grid">
-          {uniqueNumbers.length > 0 ? (
-            uniqueNumbers.map((num) => (
-              <div 
-                key={num} 
-                className="number-card"
-                onClick={() => handleCopy(num, "Number")}
-                title="Click to copy number"
-              >
-                <div className="icon-box"><Icons.Phone /></div>
-                <div className="card-info">
-                  <span className="card-label">UK Number</span>
-                  <span className="phone-number">{num}</span>
+          {uniquePhoneCards.length > 0 ? (
+            uniquePhoneCards.map((item) => (
+              <div key={item.ID} className="number-card full-info-card">
+                {/* Header of Card */}
+                <div className="card-header">
+                   <div className="icon-box"><Icons.Phone /></div>
+                   <div className="card-header-text">
+                     <span className="card-label">Receiver Number</span>
+                     <span 
+                       className="phone-number" 
+                       onClick={() => handleCopy(item.phone_no || item.PhoneNo || "")}
+                       title="Click to copy"
+                     >
+                       {item.phone_no || item.PhoneNo} 
+                       <span className="copy-icon"><Icons.Copy /></span>
+                     </span>
+                   </div>
+                </div>
+
+                {/* Divider */}
+                <div className="card-divider"></div>
+
+                {/* Full Details Body */}
+                <div className="card-body">
+                  <div className="info-row">
+                    <span className="label">Latest From:</span>
+                    <span className="value highlight">{item.FromNo}</span>
+                  </div>
+                  <div className="info-row">
+                    <span className="label">Message:</span>
+                    <span className="value message-text" title={item.Message}>{item.Message}</span>
+                  </div>
+                  <div className="info-row">
+                    <span className="label">Time:</span>
+                    <span className="value">{item.RecTime}</span>
+                  </div>
+                  
+                  {/* Extra Technical Info */}
+                  <div className="tech-info">
+                    {item.IMSI && <span className="tech-badge">IMSI: {item.IMSI}</span>}
+                    {item.Route && <span className="tech-badge">Route: {item.Route}</span>}
+                    {item.project && <span className="tech-badge">Prj: {item.project}</span>}
+                  </div>
                 </div>
               </div>
             ))
           ) : (
-            <div className="number-card" style={{justifyContent: 'center', color: 'var(--text-secondary)'}}>
-              {status === "Live" ? "Waiting for numbers..." : "Connecting..."}
+            <div className="empty-state">
+              {status === "Live" ? "Waiting for data stream..." : "Connecting to server..."}
             </div>
           )}
         </div>
       </section>
 
-      {/* --- Search --- */}
-      <div className="controls-bar">
-         <div className="search-wrapper">
-            <span className="search-icon"><Icons.Search /></span>
-            <input 
-              type="text" 
-              className="search-input" 
-              placeholder="Search messages, numbers, or senders..." 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-         </div>
-      </div>
-
-      {/* --- Messages Table --- */}
-      <section className="messages-section">
-        <div className="section-header">
-          <h2 className="section-title">Inbox</h2>
-          <span className="msg-count">{filteredMessages.length} messages</span>
-        </div>
-        
-        <div className="table-container">
-          <div className="table-header">
-            <span>From</span>
-            <span>To</span>
-            <span>Message</span>
-            <span style={{textAlign: 'right'}}>Time</span>
-          </div>
-          
-          <div className="table-body">
-            {filteredMessages.length > 0 ? (
-              filteredMessages.map((msg) => (
-                <div 
-                  key={msg.ID} 
-                  className="message-row"
-                  onClick={() => handleCopy(msg.Message, "Message")}
-                  title="Click to copy message"
-                >
-                  <div className="col-from">{msg.FromNo}</div>
-                  <div className="col-to">{msg.PhoneNo || "Unknown"}</div>
-                  <div className="col-msg">{msg.Message}</div>
-                  <div className="col-time">{msg.RecTime}</div>
-                </div>
-              ))
-            ) : (
-              <div className="empty-state">
-                <Icons.Empty />
-                <p>
-                  {searchTerm ? "No matching messages found." : "Waiting for incoming messages..."}
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
-      
-      {/* --- Toast Notification --- */}
+      {/* Toast */}
       {toast.visible && (
         <div className="toast-container">
           <div className="toast">
