@@ -28,7 +28,7 @@ export class SMSWebSocket extends DurableObject {
     this.ctx.acceptWebSocket(server);
     this.sessions.add(server);
 
-    // Send existing data immediately so UI doesn't look empty
+    // Send existing data immediately
     if (this.lastData) {
       server.send(this.lastData);
     }
@@ -36,6 +36,7 @@ export class SMSWebSocket extends DurableObject {
     // Start 5-second polling loop if not running
     if (!this.isPolling) {
       this.isPolling = true;
+      // Critical: Run in background so we don't block the handshake
       this.ctx.waitUntil(this.scheduleNextFetch());
     }
 
@@ -46,7 +47,7 @@ export class SMSWebSocket extends DurableObject {
   }
 
   async webSocketMessage(_ws: WebSocket, _message: string) {
-    // Keep-alive or commands can go here
+    // Handle pings if necessary
   }
 
   async webSocketClose(ws: WebSocket, _code: number, _reason: string, _wasClean: boolean) {
@@ -69,14 +70,13 @@ export class SMSWebSocket extends DurableObject {
     // Wait 5 seconds
     await new Promise((resolve) => setTimeout(resolve, 5000));
     
-    // Loop
+    // Continue loop
     if (this.isPolling) {
        this.scheduleNextFetch(); 
     }
   }
 
   async fetchAndBroadcast() {
-    // The specific API endpoint you are using
     const apiUrl = "https://server.smssir.com/api/free-sms.php";
     const headers = {
       "accept": "application/json",
@@ -88,7 +88,7 @@ export class SMSWebSocket extends DurableObject {
       const response = await fetch(apiUrl, { method: "GET", headers });
       const data = await response.text();
 
-      // Only broadcast if data is different or just to refresh "every 5 sec" visual
+      // Only broadcast if data is different
       if (data !== this.lastData) {
         this.lastData = data;
         this.broadcast(data);
