@@ -10,10 +10,13 @@ const Icons = {
     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
   ),
   Search: () => (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
   ),
   Check: () => (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+  ),
+  Empty: () => (
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"></path><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>
   )
 };
 
@@ -42,10 +45,14 @@ function App() {
 
   // WebSocket Logic
   useEffect(() => {
+    // Check if we are in development (localhost) or production
+    const isDev = window.location.hostname === 'localhost';
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const host = window.location.host;
-    // Fallback for local development if host is empty (unlikely in Vite but good practice)
-    const wsUrl = `${protocol}//${host || 'localhost:8787'}/api/ws`;
+    
+    // In dev, sometimes port needs adjusting if vite proxy isn't set perfectly, 
+    // but assuming standard cloudflare setup:
+    const wsUrl = `${protocol}//${host}/api/ws`;
     
     let ws: WebSocket;
     let reconnectTimer: NodeJS.Timeout;
@@ -62,7 +69,6 @@ function App() {
         try {
           const data: APIResponse = JSON.parse(event.data);
           if (data.status && Array.isArray(data.sms)) {
-            // Ensure unique messages by ID if needed, though simpler to replace for live stream
             setMessages(data.sms); 
           }
         } catch (e) {
@@ -92,14 +98,14 @@ function App() {
     };
   }, []);
 
-  // Derived State: Unique Recipient Numbers
+  // Derived State: Unique Recipient Numbers (the 'PhoneNo' field)
   const uniqueNumbers = useMemo(() => {
-    // Get unique phone numbers that messages are sent TO
     const numbers = new Set<string>();
     messages.forEach(msg => {
-      if(msg.PhoneNo) numbers.add(msg.PhoneNo);
+      // Clean and validate number if necessary
+      if(msg.PhoneNo && msg.PhoneNo.length > 5) numbers.add(msg.PhoneNo);
     });
-    return Array.from(numbers).slice(0, 3); // Take top 3
+    return Array.from(numbers).slice(0, 4); // Take top 4
   }, [messages]);
 
   // Derived State: Filtered Messages
@@ -109,7 +115,7 @@ function App() {
     return messages.filter(msg => 
       msg.Message.toLowerCase().includes(lowerTerm) || 
       msg.FromNo.toLowerCase().includes(lowerTerm) ||
-      msg.PhoneNo.toLowerCase().includes(lowerTerm)
+      (msg.PhoneNo && msg.PhoneNo.toLowerCase().includes(lowerTerm))
     );
   }, [messages, searchTerm]);
 
@@ -117,6 +123,8 @@ function App() {
   const handleCopy = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
     setToast({ msg: `${label} Copied!`, visible: true });
+    
+    // Hide toast after 2 seconds
     setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 2000);
   };
 
@@ -147,7 +155,7 @@ function App() {
 
       {/* --- Active Numbers Section --- */}
       <section className="hero-section">
-        <h2 className="section-title" style={{marginBottom: '1rem', fontSize: '1.1rem', opacity: 0.8}}>Active Numbers</h2>
+        <div className="section-label">Active Numbers</div>
         <div className="number-grid">
           {uniqueNumbers.length > 0 ? (
             uniqueNumbers.map((num) => (
@@ -155,7 +163,7 @@ function App() {
                 key={num} 
                 className="number-card"
                 onClick={() => handleCopy(num, "Number")}
-                title="Click to copy"
+                title="Click to copy number"
               >
                 <div className="icon-box"><Icons.Phone /></div>
                 <div className="card-info">
@@ -165,14 +173,15 @@ function App() {
               </div>
             ))
           ) : (
-            <div className="number-card" style={{justifyContent: 'center', color: '#888'}}>
-              {status === "Live" ? "Waiting for active numbers..." : "Connecting..."}
+            // Placeholder/Loading State
+            <div className="number-card" style={{justifyContent: 'center', color: 'var(--text-secondary)'}}>
+              {status === "Live" ? "Waiting for numbers..." : "Connecting..."}
             </div>
           )}
         </div>
       </section>
 
-      {/* --- Controls --- */}
+      {/* --- Search --- */}
       <div className="controls-bar">
          <div className="search-wrapper">
             <span className="search-icon"><Icons.Search /></span>
@@ -211,14 +220,17 @@ function App() {
                   title="Click to copy message"
                 >
                   <div className="col-from">{msg.FromNo}</div>
-                  <div className="col-to">{msg.PhoneNo}</div>
+                  <div className="col-to">{msg.PhoneNo || "Unknown"}</div>
                   <div className="col-msg">{msg.Message}</div>
                   <div className="col-time">{msg.RecTime}</div>
                 </div>
               ))
             ) : (
               <div className="empty-state">
-                {searchTerm ? "No results found." : "Waiting for messages..."}
+                <Icons.Empty />
+                <p>
+                  {searchTerm ? "No matching messages found." : "Waiting for incoming messages..."}
+                </p>
               </div>
             )}
           </div>
