@@ -45,13 +45,10 @@ function App() {
 
   // WebSocket Logic
   useEffect(() => {
-    // Check if we are in development (localhost) or production
-    const isDev = window.location.hostname === 'localhost';
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const host = window.location.host;
     
-    // In dev, sometimes port needs adjusting if vite proxy isn't set perfectly, 
-    // but assuming standard cloudflare setup:
+    // Construct WebSocket URL dynamically
     const wsUrl = `${protocol}//${host}/api/ws`;
     
     let ws: WebSocket;
@@ -98,11 +95,10 @@ function App() {
     };
   }, []);
 
-  // Derived State: Unique Recipient Numbers (the 'PhoneNo' field)
+  // Derived State: Unique Recipient Numbers
   const uniqueNumbers = useMemo(() => {
     const numbers = new Set<string>();
     messages.forEach(msg => {
-      // Clean and validate number if necessary
       if(msg.PhoneNo && msg.PhoneNo.length > 5) numbers.add(msg.PhoneNo);
     });
     return Array.from(numbers).slice(0, 4); // Take top 4
@@ -123,8 +119,6 @@ function App() {
   const handleCopy = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
     setToast({ msg: `${label} Copied!`, visible: true });
-    
-    // Hide toast after 2 seconds
     setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 2000);
   };
 
@@ -173,7 +167,6 @@ function App() {
               </div>
             ))
           ) : (
-            // Placeholder/Loading State
             <div className="number-card" style={{justifyContent: 'center', color: 'var(--text-secondary)'}}>
               {status === "Live" ? "Waiting for numbers..." : "Connecting..."}
             </div>
