@@ -28,15 +28,15 @@ export class SMSWebSocket extends DurableObject {
     this.ctx.acceptWebSocket(server);
     this.sessions.add(server);
 
-    // Send the last known data immediately to the new client so they don't have to wait 10s
+    // Send immediate data if available
     if (this.lastData) {
       server.send(this.lastData);
     }
 
-    // Start polling if not already running
+    // Start polling loop if not already running
     if (!this.isPolling) {
       this.isPolling = true;
-      // Run in background without awaiting, so we don't block the handshake
+      // Critical: Run in background so we don't block the handshake
       this.ctx.waitUntil(this.scheduleNextFetch());
     }
 
@@ -55,7 +55,7 @@ export class SMSWebSocket extends DurableObject {
   }
 
   async scheduleNextFetch() {
-    // If no one is listening, stop polling to save resources/costs
+    // Stop polling if no clients are connected to save resources
     if (this.sessions.size === 0) {
       this.isPolling = false;
       return;
@@ -67,13 +67,11 @@ export class SMSWebSocket extends DurableObject {
       console.error("Polling error:", err);
     }
 
-    // Poll every 5 seconds (slightly faster for better UX)
+    // Poll every 5 seconds
     await new Promise((resolve) => setTimeout(resolve, 5000));
     
     // Recursive call to keep loop going
     if (this.isPolling) {
-       // Use waitUntil to ensure the loop continues even if the specific IO event finishes
-       // (Though inside DOs, background promises usually run until completion anyway)
        this.scheduleNextFetch(); 
     }
   }
@@ -98,7 +96,7 @@ export class SMSWebSocket extends DurableObject {
       const response = await fetch(apiUrl, { method: "GET", headers });
       const data = await response.text();
 
-      // Broadcast only if data changed to save bandwidth
+      // Broadcast only if data changed
       if (data !== this.lastData) {
         this.lastData = data;
         this.broadcast(data);
