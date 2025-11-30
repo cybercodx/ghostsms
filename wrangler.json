@@ -23,7 +23,7 @@
   "migrations": [
     {
       "tag": "v1",
-      "new_classes": ["SMSWebSocket"]
+      "new_sqlite_classes": ["SMSWebSocket"]
     }
   ]
 }
