@@ -42,12 +42,13 @@ export class SMSWebSocket extends DurableObject {
     });
   }
 
-  async webSocketMessage(ws: WebSocket, message: string) {
+  // Prefix unused parameters with _ to satisfy TypeScript
+  async webSocketMessage(_ws: WebSocket, _message: string) {
     // Handle pings or client commands if necessary
     // For now, we just keep the connection alive
   }
 
-  async webSocketClose(ws: WebSocket, code: number, reason: string, wasClean: boolean) {
+  async webSocketClose(ws: WebSocket, _code: number, _reason: string, _wasClean: boolean) {
     this.sessions.delete(ws);
   }
 
