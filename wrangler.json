@@ -11,5 +11,19 @@
   "assets": {
     "directory": "./public",
     "not_found_handling": "single-page-application"
-  }
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "SMS_DO",
+        "class_name": "SMSWebSocket"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_classes": ["SMSWebSocket"]
+    }
+  ]
 }
