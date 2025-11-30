@@ -36,6 +36,9 @@ body {
   max-width: 1200px;
   margin: 0 auto;
   padding: 1.5rem;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 /* --- Header --- */
@@ -147,6 +150,7 @@ body {
 
 /* --- Hero & Number Cards --- */
 .hero-section {
+  flex: 1; /* Pushes footer down */
   margin-bottom: 3rem;
 }
 
@@ -306,6 +310,49 @@ body {
   padding: 2px 8px;
   border-radius: 4px;
   font-family: monospace;
+}
+
+/* --- Footer --- */
+.app-footer {
+  margin-top: auto;
+  padding-top: 2rem;
+  border-top: 1px solid rgba(0,0,0,0.05);
+  text-align: center;
+}
+
+.footer-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.copyright {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.footer-links {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+}
+
+.footer-links a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.footer-links a:hover {
+  color: var(--accent-color);
+}
+
+.separator {
+  color: rgba(0,0,0,0.2);
 }
 
 /* --- Empty State --- */
